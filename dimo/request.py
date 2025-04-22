@@ -4,11 +4,10 @@ import requests
 
 class Request:
 
-    session = requests.Session()
-
-    def __init__(self, http_method, url):
+    def __init__(self, http_method, url, session: str):
         self.http_method = http_method
         self.url = url
+        self.session = session
 
     def __call__(self, headers=None, data=None, params=None, **kwargs):
         headers = headers or {}

@@ -1,3 +1,6 @@
+from typing_extensions import Optional
+from requests import Session
+
 from .api.attestation import Attestation
 from .api.auth import Auth
 from .api.device_definitions import DeviceDefinitions
@@ -15,10 +18,12 @@ import re
 
 class DIMO:
 
-    def __init__(self, env="Production"):
+    def __init__(self, env="Production", session: Optional[Session] = None):
         self.env = env
         self.urls = dimo_environment[env]
         self._client_id = None
+        self.session = session or Session()
+
         self.attestation = Attestation(self.request, self._get_auth_headers)
         self.auth = Auth(self.request, self._get_auth_headers, self.env, self)
         self.device_definitions = DeviceDefinitions(
@@ -31,7 +36,6 @@ class DIMO:
         self.trips = Trips(self.request, self._get_auth_headers)
         self.valuations = Valuations(self.request, self._get_auth_headers)
         self.telemetry = Telemetry(self)
-        self._session = Request.session
 
     # Creates a full path for endpoints combining DIMO service, specific endpoint, and optional params
     def _get_full_path(self, service, path, params=None):
@@ -51,7 +55,7 @@ class DIMO:
     # request method for HTTP requests for the REST API
     def request(self, http_method, service, path, **kwargs):
         full_path = self._get_full_path(service, path)
-        return Request(http_method, full_path)(**kwargs)
+        return Request(http_method, full_path, self.session)(**kwargs)
 
     # query method for graphQL queries, identity and telemetry
     def query(self, service, query, variables=None, token=None):
