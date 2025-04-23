@@ -58,9 +58,7 @@ class DIMO:
 
     def __getattr__(self, name: str) -> Any:
         """
-        Lazy-load and cache service modules as attributes:
-        - rest: attestation, auth, device_definitions, token_exchange, trips, valuations
-        - graphql: identity, telemetry
+        Lazy-load and cache service modules as attributes
         """
         # If service is already created, return from cache
         if name in self._services:
