@@ -42,12 +42,11 @@ def test_query_calls_request_with_correct_payload(monkeypatch):
     fake_request.assert_called_once()
     # Inspect call arguments
     args, kwargs = fake_request.call_args
-    # args: (http_method, service, path)
     assert args[0] == "POST"
     assert args[1] == "Trips"
-    assert args[2] == ""  # GraphQL posts to root
+    assert args[2] == ""
 
-    # Check headers set in kwargs
+    # Assert correct headers
     headers = kwargs["headers"]
     assert headers["Authorization"] == "Bearer mocked_token"
     assert headers["Content-Type"] == "application/json"
@@ -58,5 +57,4 @@ def test_query_calls_request_with_correct_payload(monkeypatch):
     assert data["query"] == query_str
     assert data["variables"] == variables
 
-    # And ensure the return value is forwarded
     assert result == {"data": {"result": True}}
