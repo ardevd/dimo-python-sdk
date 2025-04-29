@@ -37,3 +37,7 @@ jobs:
       - name: DIMO Api test
         run: |
           PYTHONPATH=$(pwd) coverage run -m pytest -v && coverage xml -o coverage.xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: coverage.xml
