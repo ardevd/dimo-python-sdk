@@ -1,10 +1,10 @@
 import json
-import requests
+from requests import Session
 
 
 class Request:
 
-    def __init__(self, http_method, url, session: str):
+    def __init__(self, http_method: str, url: str, session: Session):
         self.http_method = http_method
         self.url = url
         self.session = session
