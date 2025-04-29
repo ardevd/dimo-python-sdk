@@ -5,8 +5,8 @@ from dimo.dimo import DIMO
 
 def test_get_full_path_no_params():
     client = DIMO(env="Dev")
-    result = client._get_full_path("Telemetry", "/path")
-    assert result == "https://telemetry-api.dev.dimo.zone/query/path"
+    result = client._get_full_path("Valuations", "/v2/vehicles/1234/valuations")
+    assert result == "https://valuations-api.dev.dimo.zone/v2/vehicles/1234/valuations"
 
 
 def test_get_full_path_with_params():
