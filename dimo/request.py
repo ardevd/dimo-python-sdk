@@ -1,5 +1,15 @@
 import json
-from requests import Session
+from typing import Any
+from requests import Session, RequestException
+
+
+class HTTPError(Exception):
+    """Http error wrapper with status code and (optional) response body"""
+
+    def __init__(self, status: int, message: str, body: Any = None):
+        super().__init__(f"HTTP {status}: {message}")
+        self.status = status
+        self.body = body
 
 
 class Request:
@@ -20,18 +30,28 @@ class Request:
         ):
             data = json.dumps(data)
 
-        response = self.session.request(
-            method=self.http_method,
-            url=self.url,
-            headers=headers,
-            params=params,
-            data=data,
-            **kwargs,
-        )
+        try:
+            response = self.session.request(
+                method=self.http_method,
+                url=self.url,
+                headers=headers,
+                params=params,
+                data=data,
+                **kwargs,
+            )
 
-        # TODO: Better error responses
-        response.raise_for_status()
+            response.raise_for_status()
+        except RequestException as exc:
+            status = getattr(exc.response, "status_code", None)
+            body = None
+            try:
+                body = exc.response.json()
+            except Exception:
+                body = exc.response.txt if exc.response else None
+            raise HTTPError(status=status or -1, message=str(exc), body=body)
 
-        if response.content:
+        content_type = response.headers.get("Content-Type", "")
+        if "application/json" in content_type:
             return response.json()
-        return None
+
+        return response.content
