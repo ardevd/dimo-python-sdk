@@ -13,10 +13,10 @@ def test_get_full_path_with_params():
     client = DIMO(env="Dev")
     result = client._get_full_path(
         "Telemetry",
-        "/items/:item_id",
-        {"item_id": 123, "detail_id": "abc"},
+        "/items/{item_id}",
+        {"item_id": 123},
     )
-    assert result == "https://telemetry-api.dev.dimo.zone/query/items/123"
+    assert result == "https://telemetry-api.dev.dimo.zone/items/123"
 
 
 def test_get_auth_headers():
