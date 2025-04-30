@@ -1,3 +1,6 @@
+from typing_extensions import Optional
+from requests import Session
+
 from .api.attestation import Attestation
 from .api.auth import Auth
 from .api.device_definitions import DeviceDefinitions
@@ -18,7 +21,8 @@ from urllib.parse import urljoin
 
 class DIMO:
 
-    def __init__(self, env: str = "Production") -> None:
+    def __init__(self, env: str = "Production", session: Optional[Session] = None) -> None:
+
         self.env = env
         # Assert valid environment specified
         if env not in dimo_environment:
@@ -43,7 +47,7 @@ class DIMO:
     # request method for HTTP requests for the REST API
     def request(self, http_method, service, path, **kwargs):
         full_path = self._get_full_path(service, path)
-        return Request(http_method, full_path)(**kwargs)
+        return Request(http_method, full_path, self.session)(**kwargs)
 
     # query method for graphQL queries, identity and telemetry
     def query(self, service, query, variables=None, token=None):
