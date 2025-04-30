@@ -13,40 +13,32 @@ from .graphql.telemetry import Telemetry
 
 from .request import Request
 from .environments import dimo_environment
-import re
+from typing import Optional
+from typing_extensions import Dict
+from typing import Any
+from urllib.parse import urljoin
 
 
 class DIMO:
 
-    def __init__(self, env="Production", session: Optional[Session] = None):
-        self.env = env
-        self.urls = dimo_environment[env]
-        self._client_id = None
-        self.session = session or Session()
+    def __init__(self, env: str = "Production", session: Optional[Session] = None) -> None:
 
-        self.attestation = Attestation(self.request, self._get_auth_headers)
-        self.auth = Auth(self.request, self._get_auth_headers, self.env, self)
-        self.device_definitions = DeviceDefinitions(
-            self.request, self._get_auth_headers
-        )
-        self.identity = Identity(self)
-        self.token_exchange = TokenExchange(
-            self.request, self._get_auth_headers, self.identity, self
-        )
-        self.trips = Trips(self.request, self._get_auth_headers)
-        self.valuations = Valuations(self.request, self._get_auth_headers)
-        self.telemetry = Telemetry(self)
+        self.env = env
+        # Assert valid environment specified
+        if env not in dimo_environment:
+            raise ValueError(f"Unknown environment: {env}")
+
+        self.urls = dimo_environment[env]
+
+        self._client_id: Optional[str] = None
+        self._services: Dict[str, Any] = {}
+        self._session = Request.session
 
     # Creates a full path for endpoints combining DIMO service, specific endpoint, and optional params
-    def _get_full_path(self, service, path, params=None):
+    def _get_full_path(self, service: str, path: str, params=None) -> str:
         base_path = self.urls[service]
-        full_path = f"{base_path}{path}"
-
-        if params:
-            for key, value in params.items():
-                pattern = f":{key}"
-                full_path = re.sub(pattern, str(value), full_path)
-        return full_path
+        path_formatted = path.format(**(params or {}))
+        return urljoin(base_path, path_formatted)
 
     # Sets headers based on access_token or privileged_token
     def _get_auth_headers(self, token):
@@ -67,3 +59,35 @@ class DIMO:
 
         response = self.request("POST", service, "", headers=headers, data=data)
         return response
+
+    def __getattr__(self, name: str) -> Any:
+        """
+        Lazy-load and cache service modules as attributes
+        """
+        # If service is already created, return from cache
+        if name in self._services:
+            return self._services[name]
+        # Otherwise, see if its a known service
+        mapping = {
+            "attestation": (Attestation, ("request", "_get_auth_headers")),
+            "auth": (Auth, ("request", "_get_auth_headers", "env", "self")),
+            "device_definitions": (DeviceDefinitions, ("request", "_get_auth_headers")),
+            "token_exchange": (
+                TokenExchange,
+                ("request", "_get_auth_headers", "identity", "self"),
+            ),
+            "trips": (Trips, ("request", "_get_auth_headers")),
+            "valuations": (Valuations, ("request", "_get_auth_headers")),
+            "identity": (Identity, ("self",)),
+            "telemetry": (Telemetry, ("self",)),
+        }
+        if name in mapping:
+            cls, deps = mapping[name]
+            args = [getattr(self, dep) if dep != "self" else self for dep in deps]
+            instance = cls(*args)
+            # And cache the service for future use
+            self._services[name] = instance
+            return instance
+        raise AttributeError(
+            f"{self.__class__.__name__!r} object has no attribute {name!r}"
+        )
