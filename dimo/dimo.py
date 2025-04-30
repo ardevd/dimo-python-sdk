@@ -32,7 +32,7 @@ class DIMO:
 
         self._client_id: Optional[str] = None
         self._services: Dict[str, Any] = {}
-        self._session = Request.session
+        self.session = session or Session()  # Use the provided session or create a new one
 
     # Creates a full path for endpoints combining DIMO service, specific endpoint, and optional params
     def _get_full_path(self, service: str, path: str, params=None) -> str:
