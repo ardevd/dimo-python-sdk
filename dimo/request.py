@@ -1,5 +1,4 @@
 import json
-from typing import Any
 from requests import Session, RequestException
 from .errors import HTTPError
 
